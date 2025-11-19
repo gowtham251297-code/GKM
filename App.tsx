@@ -14,6 +14,33 @@ const App: React.FC = () => {
     isFinished: false,
   });
 
+  // State to handle PWA install prompt
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = () => {
+    if (!installPrompt) return;
+    // Show the install prompt
+    installPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    installPrompt.userChoice.then((choiceResult: any) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      }
+      setInstallPrompt(null);
+    });
+  };
+
   // Reference for scrolling to explanation
   const explanationRef = useRef<HTMLDivElement>(null);
 
@@ -126,8 +153,21 @@ const App: React.FC = () => {
             </span>
           </div>
           <div className="flex flex-col items-end">
-             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Score</span>
-             <span className="text-xl font-bold text-blue-600">{state.score}</span>
+            {installPrompt && (
+              <button 
+                onClick={handleInstallClick}
+                className="mb-1 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-1"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Install App
+              </button>
+            )}
+            {!installPrompt && (
+              <>
+               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Score</span>
+               <span className="text-xl font-bold text-blue-600">{state.score}</span>
+              </>
+            )}
           </div>
         </div>
         {/* Progress Bar */}
